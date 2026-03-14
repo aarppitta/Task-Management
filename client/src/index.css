@@ -1,3 +1,82 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ─── Dark theme tokens ───────────────────────────── */
+:root {
+  --card:         #1c1040;
+  --card-alt:     #160d38;
+  --card-border:  #2e1f62;
+  --input-bg:     #120d30;
+  --input-border: #3b2870;
+  --muted:        #4b3d7a;
+}
+
+@layer utilities {
+  .gradient-text {
+    background: linear-gradient(135deg, #a78bfa 0%, #c084fc 50%, #f472b6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-btn {
+    background: linear-gradient(135deg, #6d28d9 0%, #9333ea 40%, #db2777 100%);
+    background-size: 200% 200%;
+    background-position: left center;
+    transition: background-position 0.35s ease, transform 0.15s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .gradient-btn:hover:not(:disabled) {
+    background-position: right center;
+    transform: translateY(-1px);
+    box-shadow: 0 0 20px rgba(167, 139, 250, 0.4);
+  }
+
+  .gradient-btn:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .card-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.3),
+      0 12px 32px -6px rgba(109, 40, 217, 0.35),
+      0 6px 14px -4px rgba(109, 40, 217, 0.2);
+  }
+
+  .animate-fade-in {
+    animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-fade-in-slow {
+    animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ─── Page background ─────────────────────────────── */
+body {
+  background: linear-gradient(160deg, #07041a 0%, #0d0726 45%, #130930 100%);
+  min-height: 100vh;
+  color: #e5e7eb;
+}
+
+/* ─── Scrollbar ───────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0d0726; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #4c1d95, #7c3aed);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #6d28d9, #a855f7);
+}

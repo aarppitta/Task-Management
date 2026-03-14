@@ -16,6 +16,7 @@ import {
   getHistory,
   getDailySummary,
 } from '../controllers/taskController.js';
+import { runEODJob } from '../jobs/eodJob.js';
 
 const router = Router();
 
@@ -42,6 +43,18 @@ router.get('/history', getHistory);
 // GET /api/tasks/summary?date=YYYY-MM-DD
 router.get('/summary', getDailySummary);
 
+// DEV ONLY — remove before production deployment
+// POST /api/tasks/dev/run-eod
+router.post('/dev/run-eod', async (req, res, next) => {
+  try {
+    console.log('[DEV] Manually triggering EOD job...');
+    await runEODJob();
+    res.json({ success: true, message: 'EOD job completed successfully' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ── Collection / parameterized routes ──
 
 // POST /api/tasks
@@ -52,6 +65,10 @@ router.post(
       .notEmpty().withMessage('Title is required')
       .trim()
       .isLength({ max: 255 }).withMessage('Title must be 255 characters or fewer'),
+    body('status')
+      .optional()
+      .isIn(['Pending', 'In Progress', 'Completed'])
+      .withMessage("Status must be 'Pending', 'In Progress', or 'Completed'"),
   ],
   validate,
   createTask

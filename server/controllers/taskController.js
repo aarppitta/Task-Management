@@ -21,19 +21,19 @@ export const getTodayTasks = async (req, res, next) => {
 
 /**
  * POST /api/tasks
- * Create a new task with title and optional description.
- * Status defaults to 'Pending' via DB column default — not accepted from body.
+ * Create a new task with title, optional description, and optional status.
+ * Status defaults to 'Pending' via DB column default if not provided.
  */
 export const createTask = async (req, res, next) => {
 
     try {
-    const { title, description = null } = req.body;
+    const { title, description = null, status } = req.body;
 
     const result = await pool.query(
-      `INSERT INTO tasks (title, description)
-       VALUES ($1, $2)
+      `INSERT INTO tasks (title, description${status ? ', status' : ''})
+       VALUES ($1, $2${status ? ', $3' : ''})
        RETURNING *`,
-      [title, description]
+      status ? [title, description, status] : [title, description]
     );
 
     res.status(201).json({ success: true, data: result.rows[0] });

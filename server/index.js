@@ -46,6 +46,8 @@ const startServer = async () => {
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+      import('./jobs/eodJob.js');
+      console.log('[Server] EOD job registered');
     });
   } catch (err) {
     console.error('Failed to start server — DB connection error:', err.message);
