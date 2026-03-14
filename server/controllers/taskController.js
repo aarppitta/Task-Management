@@ -9,10 +9,10 @@ export const getTodayTasks = async (req, res, next) => {
 
   try {
     const result = await pool.query(
-      `SELECT * FROM tasks
-       WHERE DATE(created_at AT TIME ZONE 'UTC') = CURRENT_DATE
-       ORDER BY created_at DESC`
-    );
+    `SELECT * FROM tasks
+    WHERE DATE(created_at AT TIME ZONE 'UTC') = CURRENT_DATE
+    ORDER BY created_at DESC`
+);
     res.json({ success: true, data: result.rows });
   } catch (error) {
     next(error);
@@ -114,11 +114,7 @@ export const deleteTask = async (req, res, next) => {
 export const getHistory = async (req, res, next) => {
 
     try {
-    const { date } = req.query;
-
-    if (!date) {
-      return res.status(400).json({ success: false, message: 'Date is required' });
-    }
+    const date = req.query.date || new Date().toISOString().split('T')[0];
 
     const result = await pool.query(
       `SELECT * FROM archived_tasks
@@ -140,7 +136,7 @@ export const getHistory = async (req, res, next) => {
  * Returns { data: null } if no summary exists for the date.
  */
 export const getDailySummary = async (req, res, next) => {
-    
+
   try {
     const date = req.query.date || new Date().toISOString().split('T')[0];
 
