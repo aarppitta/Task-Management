@@ -26,7 +26,6 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
 });
 
-// ── SQL Statements ────────────────────────────────────────────────────────────
 
 const createTasksTable = `
   CREATE TABLE IF NOT EXISTS tasks (
@@ -92,8 +91,7 @@ const createDailySummariesConstraint = `
   $$;
 `;
 
-// ── Migration Runner ──────────────────────────────────────────────────────────
-
+// ── Migration Runner ─
 const runMigration = async () => {
   const client = await pool.connect();
 
