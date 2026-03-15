@@ -86,13 +86,75 @@ daily-task-manager/
 
 ## Prerequisites
 
-- **Node.js** 18 or later
+- **Node.js** 20 or later
 - **PostgreSQL** 14 or later (running locally or on a hosted service)
 - A **Mailtrap** account at <https://mailtrap.io> (free tier is sufficient)
+- **Docker** and **Docker Compose** (optional — for containerised setup)
 
 ---
 
-## Local Setup
+## Quick Start with Docker
+
+> Requires only Docker — no local Node.js or PostgreSQL needed.
+
+### 1. Clone the repository
+
+```bash
+git clone <repo-url>
+cd daily-task-manager
+```
+
+### 2. Start the containers
+
+```bash
+docker compose up --build -d
+```
+
+This spins up three containers:
+
+| Container | Description            | Host Port |
+|-----------|------------------------|-----------|
+| `db`      | PostgreSQL 16          | —         |
+| `server`  | Express API            | `3001`    |
+| `client`  | React app (Vite)       | `4173`    |
+
+Database migrations run automatically when the server container starts.
+
+### 3. Open in browser
+
+```
+http://localhost:4173
+```
+
+The API is available at `http://localhost:3001/api`.
+
+### 4. Useful Docker commands
+
+```bash
+# View logs
+docker compose logs -f
+
+# Stop all containers
+docker compose down
+
+# Stop and remove database volume (full reset)
+docker compose down -v
+
+# Rebuild after code changes
+docker compose up --build -d
+```
+
+### 5. Mailtrap (optional)
+
+Pass your Mailtrap credentials as environment variables:
+
+```bash
+MAILTRAP_USER=your_user MAILTRAP_PASS=your_pass NOTIFY_EMAIL=you@example.com docker compose up --build -d
+```
+
+---
+
+## Local Setup (without Docker)
 
 ### 1. Clone the repository
 
