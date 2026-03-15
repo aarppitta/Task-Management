@@ -123,7 +123,8 @@ export const sendSummaryEmail = async (summary) => {
 
 export const runEODJob = async () => {
   // STEP 1 — Idempotency check (outside transaction)
-  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   console.log(`[EOD] Starting EOD job for: ${today}`);
 
   const existing = await pool.query(
@@ -153,7 +154,7 @@ export const runEODJob = async () => {
         COUNT(*) FILTER (WHERE status = 'Pending')       AS pending_tasks,
         COUNT(*) FILTER (WHERE status = 'Not Completed') AS not_completed_tasks
       FROM tasks
-      WHERE DATE(created_at AT TIME ZONE 'UTC') = $1`,
+      WHERE created_at::date = $1`,
       [today]
     );
 
@@ -187,7 +188,7 @@ export const runEODJob = async () => {
       `UPDATE tasks
        SET status = 'Not Completed', updated_at = NOW()
        WHERE status = 'In Progress'
-       AND DATE(created_at AT TIME ZONE 'UTC') = $1`,
+       AND created_at::date = $1`,
       [today]
     );
 
@@ -204,7 +205,7 @@ export const runEODJob = async () => {
          id, title, description, status,
          created_at, updated_at, $1::date
        FROM tasks
-       WHERE DATE(created_at AT TIME ZONE 'UTC') = $1`,
+       WHERE created_at::date = $1`,
       [today]
     );
 
@@ -213,7 +214,7 @@ export const runEODJob = async () => {
     // STEP 6 — Delete archived tasks from active table
     const deleteResult = await client.query(
       `DELETE FROM tasks
-       WHERE DATE(created_at AT TIME ZONE 'UTC') = $1`,
+       WHERE created_at::date = $1`,
       [today]
     );
 

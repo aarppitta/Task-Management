@@ -4,10 +4,8 @@ import { getHistory, getDailySummary } from '../api/taskApi'
 import TaskCard from '../components/TaskCard'
 import EmptyState from '../components/EmptyState'
 
-function getYesterday() {
-  const d = new Date()
-  d.setDate(d.getDate() - 1)
-  return d.toISOString().split('T')[0]
+function getToday() {
+  return new Date().toISOString().split('T')[0]
 }
 
 function formatDate(dateStr) {
@@ -18,9 +16,9 @@ function formatDate(dateStr) {
 
 const summaryStats = [
   { key: 'total_tasks',         label: 'Total',         icon: '📋', border: '#a78bfa', text: 'text-violet-400',  iconBg: 'rgba(167,139,250,0.12)' },
-  { key: 'completed_count',     label: 'Completed',     icon: '✅', border: '#34d399', text: 'text-emerald-400', iconBg: 'rgba(52,211,153,0.12)'  },
-  { key: 'pending_count',       label: 'Pending',       icon: '⏳', border: '#f59e0b', text: 'text-amber-400',   iconBg: 'rgba(245,158,11,0.12)'  },
-  { key: 'not_completed_count', label: 'Not Completed', icon: '❌', border: '#fb7185', text: 'text-rose-400',    iconBg: 'rgba(251,113,133,0.12)' },
+  { key: 'completed_tasks',     label: 'Completed',     icon: '✅', border: '#34d399', text: 'text-emerald-400', iconBg: 'rgba(52,211,153,0.12)'  },
+  { key: 'pending_tasks',       label: 'Pending',       icon: '⏳', border: '#f59e0b', text: 'text-amber-400',   iconBg: 'rgba(245,158,11,0.12)'  },
+  { key: 'not_completed_tasks', label: 'Not Completed', icon: '❌', border: '#fb7185', text: 'text-rose-400',    iconBg: 'rgba(251,113,133,0.12)' },
 ]
 
 function SummaryStatCard({ stat, value }) {
@@ -51,7 +49,7 @@ function SummaryStatCard({ stat, value }) {
 }
 
 export default function HistoryPage() {
-  const [selectedDate, setSelectedDate] = useState(getYesterday)
+  const [selectedDate, setSelectedDate] = useState(getToday)
   const [tasks, setTasks] = useState([])
   const [summary, setSummary] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -112,7 +110,7 @@ export default function HistoryPage() {
           <input
             type="date"
             value={selectedDate}
-            max={getYesterday()}
+            max={getToday()}
             onChange={(e) => setSelectedDate(e.target.value)}
             className="rounded-xl px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-500/50 transition-all"
             style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)' }}
@@ -174,7 +172,7 @@ export default function HistoryPage() {
                   />
                 </div>
                 <p className="text-xs text-gray-600 mt-1.5">
-                  {summary.completed_count ?? 0} of {summary.total_tasks ?? 0} tasks completed
+                  {summary.completed_tasks ?? 0} of {summary.total_tasks ?? 0} tasks completed
                 </p>
               </div>
             </div>

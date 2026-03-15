@@ -17,6 +17,7 @@ import {
   getDailySummary,
 } from '../controllers/taskController.js';
 import { runEODJob } from '../jobs/eodJob.js';
+import pool from '../config/db.js';
 
 const router = Router();
 
@@ -48,6 +49,13 @@ router.get('/summary', getDailySummary);
 router.post('/dev/run-eod', async (req, res, next) => {
   try {
     console.log('[DEV] Manually triggering EOD job...');
+
+    // Clear previous EOD data for today so the job can re-run
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    await pool.query('DELETE FROM daily_summaries WHERE summary_date = $1', [today]);
+    await pool.query('DELETE FROM archived_tasks WHERE archive_date = $1', [today]);
+
     await runEODJob();
     res.json({ success: true, message: 'EOD job completed successfully' });
   } catch (err) {

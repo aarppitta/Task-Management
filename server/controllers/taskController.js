@@ -10,7 +10,7 @@ export const getTodayTasks = async (req, res, next) => {
   try {
     const result = await pool.query(
     `SELECT * FROM tasks
-    WHERE DATE(created_at AT TIME ZONE 'UTC') = CURRENT_DATE
+    WHERE created_at::date = CURRENT_DATE
     ORDER BY created_at DESC`
 );
     res.json({ success: true, data: result.rows });
@@ -113,8 +113,15 @@ export const deleteTask = async (req, res, next) => {
  */
 export const getHistory = async (req, res, next) => {
 
-    try {
-    const date = req.query.date || new Date().toISOString().split('T')[0];
+  try {
+    if (!req.query.date) {
+      return res.status(400).json({
+        success: false,
+        message: 'date query parameter is required (YYYY-MM-DD)',
+      });
+    }
+
+    const date = req.query.date;
 
     const result = await pool.query(
       `SELECT * FROM archived_tasks
