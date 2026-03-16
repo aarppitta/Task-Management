@@ -1,58 +1,56 @@
-
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import pool from './config/db.js';
-import taskRoutes from './routes/taskRoutes.js';
-import errorHandler from './middleware/errorHandler.js';
 
-// Load .env variables into process.env
 dotenv.config();
+
+import { initDB } from './config/db.js';
+import taskRoutes from './routes/tasks.js';
+import summaryRoutes from './routes/summaries.js';
+import eodRoutes from './routes/eod.js';
+import { eodJob } from './jobs/scheduler.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-
-// Parse incoming JSON request bodies
+// CORS — support multiple origins via env
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:3000')
+  .split(',')
+  .map((o) => o.trim());
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
-// Enable CORS — only allow requests from the React dev server
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true,
-  })
-);
-
-
-// Health check — confirms the API is reachable
-app.get('/', (req, res) => res.json({ success: true, message: 'API is running' }));
-
-// All task-related endpoints are under /api/tasks
+// Routes
 app.use('/api/tasks', taskRoutes);
+app.use('/api/summaries', summaryRoutes);
+app.use('/api/eod', eodRoutes);
 
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ success: true, data: { status: 'ok', timestamp: new Date().toISOString() } });
+});
 
-// Must be registered AFTER all routes
-app.use(errorHandler);
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ success: false, error: 'Route not found' });
+});
 
+// Global error handler
+app.use((err, req, res, _next) => {
+  console.error('[Server Error]', err);
+  res.status(500).json({ success: false, error: 'Internal server error' });
+});
 
-// Verify DB connection first, then begin accepting requests
-const startServer = async () => {
-  try {
-    // Ping the DB to confirm the pool is working before accepting traffic
-    await pool.query('SELECT 1');
-    console.log('Database connection verified');
+// Start cron scheduler
+eodJob.start();
+console.log('[Scheduler] EOD cron job started (runs at midnight daily)');
 
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      import('./jobs/eodJob.js');
-      console.log('[Server] EOD job registered');
-    });
-  } catch (err) {
-    console.error('Failed to start server — DB connection error:', err.message);
-    process.exit(1);
-  }
-};
-
-startServer();
+// Initialize database tables, then start server
+initDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`[Server] Running on http://localhost:${PORT}`);
+  });
+}).catch((err) => {
+  console.error('[DB] Failed to initialize database:', err);
+  process.exit(1);
+});

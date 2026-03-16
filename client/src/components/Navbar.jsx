@@ -1,22 +1,47 @@
-import { NavLink } from 'react-router-dom'
-import { CheckCircleIcon } from '@heroicons/react/24/solid'
+import { NavLink } from 'react-router-dom';
+import { useState } from 'react';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
+import toast from 'react-hot-toast';
+import { triggerEOD } from '../api/taskApi';
 
-export default function Navbar() {
-  const linkClass = ({ isActive }) =>
-    [
-      'text-sm font-semibold px-4 py-1.5 rounded-full transition-all duration-200',
-      isActive
-        ? 'bg-violet-500/20 text-violet-200 ring-1 ring-violet-500/40'
-        : 'text-gray-400 hover:text-gray-100 hover:bg-white/5',
-    ].join(' ')
+const navLinkClass = ({ isActive }) =>
+  `relative px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 ${
+    isActive
+      ? 'text-white'
+      : 'text-gray-400 hover:text-gray-100 hover:bg-white/5'
+  }`;
+
+export default function Navbar({ onEODSuccess }) {
+  const [triggering, setTriggering] = useState(false);
+
+  async function handleTriggerEOD() {
+    const confirmed = window.confirm(
+      'Run End-of-Day for TODAY?\n\nThis archives all tasks and sends an email summary.'
+    );
+    if (!confirmed) return;
+    setTriggering(true);
+    try {
+      const res = await triggerEOD();
+      const { data } = res;
+      toast.success(
+        `EOD complete — ${data.completedTasks}/${data.totalTasks} tasks completed (${data.completionPercentage}%)`
+      );
+      onEODSuccess?.();
+    } catch (err) {
+      toast.error(err.response?.data?.error || err.message || 'EOD failed');
+    } finally {
+      setTriggering(false);
+    }
+  }
 
   return (
     <nav
-      className="sticky top-0 z-20"
+      className="sticky top-0 z-50 border-b"
       style={{
-        background: 'linear-gradient(135deg, #07041a 0%, #0f0728 50%, #1a0935 100%)',
-        borderBottom: '1px solid rgba(109, 40, 217, 0.25)',
-        boxShadow: '0 4px 24px rgba(109, 40, 217, 0.2)',
+        background: 'linear-gradient(135deg, rgba(7,4,26,0.92) 0%, rgba(15,7,40,0.92) 50%, rgba(26,9,53,0.92) 100%)',
+        backdropFilter: 'blur(20px)',
+        borderColor: 'rgba(109, 40, 217, 0.25)',
+        boxShadow: '0 4px 24px rgba(109, 40, 217, 0.15)',
       }}
     >
       {/* Subtle violet glow line at top */}
@@ -27,9 +52,9 @@ export default function Navbar() {
         }}
       />
 
-      <div className="relative max-w-3xl mx-auto px-6 py-3.5 flex items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center gap-2.5">
+      <div className="relative max-w-3xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
+        {/* Brand */}
+        <div className="flex items-center gap-2.5 shrink-0">
           <div
             className="w-8 h-8 rounded-xl flex items-center justify-center"
             style={{
@@ -53,15 +78,58 @@ export default function Navbar() {
         </div>
 
         {/* Nav links */}
-        <div className="flex items-center gap-1.5">
-          <NavLink to="/" end className={linkClass}>
-            Today&apos;s Board
-          </NavLink>
-          <NavLink to="/history" className={linkClass}>
-            History
-          </NavLink>
+        <div className="flex items-center gap-1">
+          {[
+            { to: '/', label: 'Today', end: true },
+            { to: '/history', label: 'History' },
+            { to: '/summary', label: 'Summary' },
+          ].map(({ to, label, end }) => (
+            <NavLink key={to} to={to} end={end} className={navLinkClass}>
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span
+                      className="absolute inset-0 rounded-xl"
+                      style={{ background: 'linear-gradient(135deg, rgba(109,40,217,0.2), rgba(139,92,246,0.2))' }}
+                    />
+                  )}
+                  <span className="relative">{label}</span>
+                </>
+              )}
+            </NavLink>
+          ))}
         </div>
+
+        {/* EOD Button */}
+        <button
+          onClick={handleTriggerEOD}
+          disabled={triggering}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+          style={{
+            background: triggering
+              ? 'rgba(225,29,72,0.15)'
+              : 'linear-gradient(135deg, rgba(225,29,72,0.9), rgba(190,18,60,0.9))',
+            border: '1px solid rgba(225,29,72,0.3)',
+            color: '#fff',
+            boxShadow: triggering ? 'none' : '0 4px 15px rgba(225,29,72,0.25)',
+          }}
+        >
+          {triggering ? (
+            <>
+              <svg className="animate-spin h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+              Running…
+            </>
+          ) : (
+            <>
+              <span className="text-base leading-none">🌙</span>
+              Trigger EOD
+            </>
+          )}
+        </button>
       </div>
     </nav>
-  )
+  );
 }

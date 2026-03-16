@@ -1,164 +1,137 @@
-import { useState, useEffect } from 'react'
-import { SparklesIcon } from '@heroicons/react/24/outline'
+import { useState, useRef, useEffect } from 'react';
 
-const STATUS_OPTIONS = ['Pending', 'In Progress', 'Completed']
+const STATUS_OPTIONS = [
+  { value: 'pending',       label: 'Pending',       dot: '#f59e0b' },
+  { value: 'in_progress',   label: 'In Progress',   dot: '#38bdf8' },
+  { value: 'completed',     label: 'Completed',     dot: '#34d399' },
+  { value: 'not_completed', label: 'Not Completed', dot: '#fb7185' },
+];
 
-const STATUS_STYLES = {
-  'Pending':     { dot: '#f59e0b', bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.3)' },
-  'In Progress': { dot: '#38bdf8', bg: 'rgba(56,189,248,0.12)',  border: 'rgba(56,189,248,0.3)' },
-  'Completed':   { dot: '#34d399', bg: 'rgba(52,211,153,0.12)', border: 'rgba(52,211,153,0.3)' },
-}
-
-export default function TaskForm({ onSubmit, initialData, onCancel, isLoading }) {
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [status, setStatus] = useState('Pending')
-  const [titleError, setTitleError] = useState('')
-
-  const isEditing = Boolean(initialData)
+function StatusSelect({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const selected = STATUS_OPTIONS.find((o) => o.value === value) || STATUS_OPTIONS[0];
 
   useEffect(() => {
-    if (initialData) {
-      setTitle(initialData.title || '')
-      setDescription(initialData.description || '')
-      setStatus(initialData.status || 'Pending')
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
     }
-  }, [initialData])
-
-  function handleSubmit(e) {
-    e.preventDefault()
-    if (!title.trim()) {
-      setTitleError('Title is required.')
-      return
-    }
-    setTitleError('')
-    onSubmit({ title: title.trim(), description: description.trim(), status })
-    if (!isEditing) {
-      setTitle('')
-      setDescription('')
-      setStatus('Pending')
-    }
-  }
-
-  const inputClass =
-    'w-full rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 ' +
-    'focus:outline-none focus:ring-2 focus:ring-violet-500/60 focus:ring-offset-0 transition-all resize-none'
-
-  const currentStyle = STATUS_STYLES[status] || STATUS_STYLES['Pending']
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   return (
-    <div
-      className="rounded-2xl overflow-hidden animate-fade-in"
-      style={{
-        background: 'var(--card)',
-        border: '1px solid var(--card-border)',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
-      }}
-    >
-      {/* Rainbow top accent */}
-      <div
-        className="h-0.5 w-full"
-        style={{
-          background: 'linear-gradient(90deg, #7c3aed, #a855f7, #ec4899, #f97316, #eab308, #10b981)',
-        }}
-      />
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="input-base flex items-center justify-between cursor-pointer"
+      >
+        <span className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: selected.dot }} />
+          {selected.label}
+        </span>
+        <svg
+          className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
 
-      <div className="p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <div
-            className="w-6 h-6 rounded-lg flex items-center justify-center"
-            style={{ background: 'rgba(139, 92, 246, 0.2)', border: '1px solid rgba(139, 92, 246, 0.3)' }}
-          >
-            <SparklesIcon className="w-3.5 h-3.5 text-violet-300" />
-          </div>
-          <h3 className="text-sm font-semibold text-gray-300">
-            {isEditing ? 'Edit Task' : 'Add New Task'}
-          </h3>
-        </div>
-
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="mb-3">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value)
-                if (e.target.value.trim()) setTitleError('')
-              }}
-              placeholder="What needs to be done?"
-              className={inputClass}
-              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)' }}
-            />
-            {titleError && (
-              <p className="mt-1.5 text-xs text-rose-400 flex items-center gap-1">
-                <span>⚠</span> {titleError}
-              </p>
-            )}
-          </div>
-
-          <div className="mb-3">
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add details (optional)..."
-              rows={2}
-              className={inputClass}
-              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)' }}
-            />
-          </div>
-
-          {/* Status dropdown */}
-          <div className="mb-4">
-            <div className="relative">
-              <div
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full"
-                style={{ background: currentStyle.dot }}
-              />
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full rounded-xl pl-8 pr-4 py-2.5 text-sm font-medium appearance-none cursor-pointer
-                  focus:outline-none focus:ring-2 focus:ring-violet-500/60 transition-all"
-                style={{
-                  background: currentStyle.bg,
-                  border: `1px solid ${currentStyle.border}`,
-                  color: currentStyle.dot,
-                }}
-              >
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt} style={{ background: '#1a1a2e', color: '#e5e7eb' }}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-              {/* Custom chevron */}
-              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">
-                ▾
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="gradient-btn text-white rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+      {open && (
+        <ul className="absolute z-50 mt-1 w-full rounded-xl overflow-hidden shadow-xl select-none"
+            style={{ background: '#120d30', border: '1px solid var(--input-border)' }}>
+          {STATUS_OPTIONS.map((opt) => (
+            <li
+              key={opt.value}
+              onClick={() => { onChange(opt.value); setOpen(false); }}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm cursor-pointer transition-colors duration-100
+                ${opt.value === value ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+              style={{ background: opt.value === value ? 'rgba(139,92,246,0.2)' : undefined }}
+              onMouseEnter={(e) => { if (opt.value !== value) e.currentTarget.style.background = 'rgba(139,92,246,0.1)'; }}
+              onMouseLeave={(e) => { if (opt.value !== value) e.currentTarget.style.background = ''; }}
             >
-              {isLoading ? 'Saving…' : isEditing ? '✓ Save Changes' : '+ Add Task'}
-            </button>
-            {isEditing && (
-              <button
-                type="button"
-                onClick={onCancel}
-                className="text-gray-400 hover:text-gray-200 rounded-xl px-5 py-2.5 text-sm font-medium transition-all"
-                style={{ border: '1px solid var(--card-border)' }}
-              >
-                Cancel
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: opt.dot }} />
+              {opt.label}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
-  )
+  );
+}
+
+export default function TaskForm({ initialData = {}, onSubmit, onCancel, loading }) {
+  const [title, setTitle] = useState(initialData.title || '');
+  const [description, setDescription] = useState(initialData.description || '');
+  const [status, setStatus] = useState(initialData.status || 'pending');
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!title.trim()) return;
+    onSubmit({ title: title.trim(), description: description.trim(), status });
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+          Title <span className="text-rose-400 normal-case tracking-normal">*</span>
+        </label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="What needs to be done?"
+          required
+          autoFocus
+          className="input-base"
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+          Description <span className="text-gray-600 normal-case tracking-normal font-normal">optional</span>
+        </label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Add details, context, or notes…"
+          rows={3}
+          className="input-base resize-none"
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+          Status
+        </label>
+        <StatusSelect value={status} onChange={setStatus} />
+      </div>
+
+      <div className="flex gap-2.5 pt-1">
+        <button
+          type="submit"
+          disabled={loading || !title.trim()}
+          className="btn-primary flex-1"
+        >
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+              Saving…
+            </span>
+          ) : initialData.id ? 'Update Task' : 'Add Task'}
+        </button>
+        {onCancel && (
+          <button type="button" onClick={onCancel} className="btn-ghost">
+            Cancel
+          </button>
+        )}
+      </div>
+    </form>
+  );
 }

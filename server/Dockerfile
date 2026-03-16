@@ -1,13 +1,23 @@
+# ── Build stage ────────────────────────────────────────────
+FROM node:22-alpine AS deps
+
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev
+
+# ── Runtime stage ───────────────────────────────────────────
 FROM node:22-alpine
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-
-RUN npm ci --omit=dev
+COPY --from=deps /app/node_modules ./node_modules
 
 COPY . .
 
-EXPOSE 3000
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
 
-CMD ["sh", "-c", "node config/migrate.js && node index.js"]
+EXPOSE 5000
+
+CMD ["node", "index.js"]

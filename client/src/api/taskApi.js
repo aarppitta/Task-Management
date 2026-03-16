@@ -1,69 +1,25 @@
-import axios from 'axios'
+import axios from 'axios';
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-  headers: { 'Content-Type': 'application/json' },
-})
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-export async function getTodayTasks() {
-  try {
-    const response = await api.get('/tasks/today')
-    return response.data.data
-  } catch (error) {
-    throw error.response?.data?.message || error.message
-  }
-}
+const api = axios.create({ baseURL: BASE });
 
-export async function createTask(title, description, status) {
-  try {
-    const response = await api.post('/tasks', { title, description, status })
-    return response.data.data
-  } catch (error) {
-    throw error.response?.data?.message || error.message
-  }
-}
+export const getTasks = (date) =>
+  api.get(`/tasks${date ? `?date=${date}` : ''}`).then((r) => r.data.data);
 
-export async function updateTask(id, fields) {
-  try {
-    const response = await api.put(`/tasks/${id}`, fields)
-    return response.data.data
-  } catch (error) {
-    throw error.response?.data?.message || error.message
-  }
-}
+export const createTask = (data) =>
+  api.post('/tasks', data).then((r) => r.data.data);
 
-export async function deleteTask(id) {
-  try {
-    const response = await api.delete(`/tasks/${id}`)
-    return response.data
-  } catch (error) {
-    throw error.response?.data?.message || error.message
-  }
-}
+export const updateTask = (id, data) =>
+  api.put(`/tasks/${id}`, data).then((r) => r.data.data);
 
-export async function getHistory(date) {
-  try {
-    const response = await api.get(`/tasks/history?date=${date}`)
-    return response.data.data
-  } catch (error) {
-    throw error.response?.data?.message || error.message
-  }
-}
+export const deleteTask = (id) => api.delete(`/tasks/${id}`);
 
-export async function getDailySummary(date) {
-  try {
-    const response = await api.get(`/tasks/summary?date=${date}`)
-    return response.data.data
-  } catch (error) {
-    throw error.response?.data?.message || error.message
-  }
-}
+export const getArchivedTasks = (date) =>
+  api.get(`/tasks/archived?date=${date}`).then((r) => r.data.data);
 
-export async function triggerEODJob() {
-  try {
-    const response = await api.post('/tasks/dev/run-eod')
-    return response.data
-  } catch (error) {
-    throw error.response?.data?.message || error.message
-  }
-}
+export const getSummary = (date) =>
+  api.get(`/summaries/${date}`).then((r) => r.data.data);
+
+export const triggerEOD = (date) =>
+  api.post('/eod/trigger', date ? { date } : {}).then((r) => r.data);

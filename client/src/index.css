@@ -12,6 +12,39 @@
   --muted:        #4b3d7a;
 }
 
+@layer base {
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    @apply antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(160deg, #07041a 0%, #0d0726 45%, #130930 100%);
+    min-height: 100vh;
+    color: #e5e7eb;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0d0726; }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #4c1d95, #7c3aed);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, #6d28d9, #a855f7);
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+    cursor: pointer;
+    opacity: 0.7;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+  ::selection { background: rgba(139,92,246,0.35); color: #fff; }
+}
+
 @layer utilities {
   .gradient-text {
     background: linear-gradient(135deg, #a78bfa 0%, #c084fc 50%, #f472b6 100%);
@@ -56,27 +89,55 @@
   .animate-fade-in-slow {
     animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border transition-all duration-200;
+    background: var(--card);
+    border-color: var(--card-border);
+  }
+  .card:hover { border-color: rgba(139, 92, 246, 0.25); }
+
+  .input-base {
+    @apply w-full px-4 py-2.5 rounded-xl text-sm text-white placeholder-gray-500
+           focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50
+           transition-all duration-150;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+  }
+  .input-base:focus { background: rgba(18, 13, 48, 0.9); }
+
+  .btn-primary {
+    @apply px-5 py-2.5 text-sm font-semibold rounded-xl transition-all duration-150
+           disabled:opacity-40 disabled:cursor-not-allowed;
+    background: linear-gradient(135deg, #6d28d9, #9333ea);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(109, 40, 217, 0.3);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5b21b6, #7c3aed);
+    box-shadow: 0 4px 20px rgba(109, 40, 217, 0.45);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active:not(:disabled) { transform: translateY(0); }
+
+  .btn-ghost {
+    @apply px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-150 text-gray-400;
+    background: rgba(139, 92, 246, 0.06);
+    border: 1px solid var(--card-border);
+  }
+  .btn-ghost:hover { background: rgba(139, 92, 246, 0.12); @apply text-white; }
 }
 
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0);    }
-}
-
-/* ─── Page background ─────────────────────────────── */
-body {
-  background: linear-gradient(160deg, #07041a 0%, #0d0726 45%, #130930 100%);
-  min-height: 100vh;
-  color: #e5e7eb;
-}
-
-/* ─── Scrollbar ───────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #0d0726; }
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #4c1d95, #7c3aed);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #6d28d9, #a855f7);
 }
