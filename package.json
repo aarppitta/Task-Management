@@ -1,0 +1,14 @@
+{
+  "name": "daily-task-manager",
+  "version": "1.0.0",
+  "description": "PERN stack daily task management system",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "cd server && node index.js",
+    "dev": "cd server && nodemon index.js",
+    "install": "cd server && npm install && cd ../client && npm install"
+  },
+  "keywords": ["pern", "task-manager", "react", "express", "postgresql"],
+  "author": "",
+  "license": "ISC"
+}
