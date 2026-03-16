@@ -9,5 +9,3 @@ dist/
 
 # macOS
 .DS_Store
-
-.env.example
