@@ -47,8 +47,8 @@ console.log('[Scheduler] EOD cron job started (runs at midnight daily)');
 
 // Initialize database tables, then start server
 initDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`[Server] Running on http://localhost:${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[Server] Running on 0.0.0.0:${PORT}`);
   });
 }).catch((err) => {
   console.error('[DB] Failed to initialize database:', err);
