@@ -91,7 +91,8 @@ export async function runEOD(targetDate) {
 
     // Step 8: Send email summary (non-blocking — failure won't roll back the transaction)
     try {
-      await sendEmailSummary({
+      // Set a 10-second timeout for email sending
+      const emailPromise = sendEmailSummary({
         targetDate,
         totalTasks: cumTotal,
         completedTasks: cumCompleted,
@@ -99,6 +100,14 @@ export async function runEOD(targetDate) {
         completionPercentage: cumPct,
         tasks: updatedTasks,
       });
+
+      // Race the email promise against a 10-second timeout
+      await Promise.race([
+        emailPromise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Email send timeout')), 10000)
+        ),
+      ]);
     } catch (emailErr) {
       console.warn(`[EOD] Email failed for ${targetDate}, continuing without notification:`, emailErr.message);
     }

@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-const api = axios.create({ baseURL: BASE });
+const api = axios.create({ baseURL: BASE, timeout: 30000 });
 
 export const getTasks = (date) =>
   api.get(`/tasks${date ? `?date=${date}` : ''}`).then((r) => r.data.data);
@@ -22,4 +22,4 @@ export const getSummary = (date) =>
   api.get(`/summaries/${date}`).then((r) => r.data.data);
 
 export const triggerEOD = (date) =>
-  api.post('/eod/trigger', date ? { date } : {}).then((r) => r.data);
+  api.post('/eod/trigger', date ? { date } : {}, { timeout: 60000 }).then((r) => r.data);
