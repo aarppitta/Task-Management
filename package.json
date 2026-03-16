@@ -1,14 +1,15 @@
 {
   "name": "daily-task-manager",
   "version": "1.0.0",
-  "description": "PERN stack daily task management system",
+  "description": "Daily Task Manager - Full Stack Application",
   "main": "server/index.js",
+  "type": "module",
   "scripts": {
-    "start": "cd server && node index.js",
-    "dev": "cd server && nodemon index.js",
-    "install": "cd server && npm install && cd ../client && npm install"
+    "start": "cd server && npm install && node index.js",
+    "dev": "cd server && npm install && npm run dev",
+    "install:all": "cd server && npm install && cd ../client && npm install"
   },
-  "keywords": ["pern", "task-manager", "react", "express", "postgresql"],
+  "keywords": ["task-manager", "express", "react", "postgresql"],
   "author": "",
   "license": "ISC"
 }
