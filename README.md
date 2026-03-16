@@ -1,37 +1,16 @@
 # Daily Task Manager
 
-A full-stack daily task management system built with the PERN stack (PostgreSQL, Express, React, Node.js). Tasks live on a **Today Board** for the current day. Each night at 23:59, a scheduled End-of-Day (EOD) job archives all tasks, generates a daily summary, and sends an HTML summary email via Mailtrap.
+PERN stack daily task management system with automated end-of-day archival, email summaries, and task history.
 
----
+**Key Features:**
+- Create, edit, delete tasks with 4 statuses (Pending, In Progress, Completed, Not Completed)
+- Today Board, History Page (date picker), Summary Page (completion chart)
+- Automated EOD at 23:59 (Asia/Kolkata): archive tasks, email summary, update stats
+- Manual EOD trigger for testing
+- Idempotent EOD job (safe to trigger multiple times)
+- Auto-created database tables on startup
 
-## Tech Stack
-
-| Layer      | Technology                        |
-|------------|-----------------------------------|
-| Frontend   | React 19 + Vite 8 + Tailwind CSS 3 |
-| Backend    | Express 5 + Node.js 22           |
-| Database   | PostgreSQL 16 (via `pg`)          |
-| Scheduling | node-cron                         |
-| Email      | Nodemailer + Mailtrap             |
-| Deployment | Docker + Docker Compose + Nginx   |
-
----
-
-## Features
-
-- Create, edit, and delete tasks for the current day
-- Four task statuses: **Pending**, **In Progress**, **Completed**, **Not Completed**
-- **Today Board** (`/`) — live view of today's active tasks with inline status transitions
-- **History Page** (`/history`) — date picker to browse archived tasks from previous days
-- **Summary Page** (`/summary`) — completion ring chart and daily statistics
-- Automated EOD job at 23:59 (Asia/Kolkata) that:
-  - Generates a daily summary with completion statistics
-  - Updates any remaining **In Progress** tasks to **Not Completed**
-  - Archives all tasks transactionally (atomic — all steps commit or none do)
-  - Sends an HTML summary email via Mailtrap
-- Manual EOD trigger button in the Navbar for testing
-- Idempotent EOD job — safe to trigger multiple times on the same day
-- Database tables auto-created on server startup (no separate migration step)
+**Tech Stack:** React 19 + Vite + Tailwind | Express 5 + Node.js 22 | PostgreSQL 16 | node-cron | Mailtrap | Docker
 
 ---
 
@@ -39,46 +18,20 @@ A full-stack daily task management system built with the PERN stack (PostgreSQL,
 
 ```
 daily-task-manager/
-├── client/                          # React frontend (Vite + Nginx in Docker)
+├── client/                      # React frontend (Vite + Nginx)
 │   ├── src/
-│   │   ├── api/
-│   │   │   └── taskApi.js           # Axios API client — all HTTP calls
-│   │   ├── components/
-│   │   │   ├── Navbar.jsx           # Top nav with EOD trigger button
-│   │   │   ├── TaskCard.jsx         # Task card with edit/delete/status actions
-│   │   │   └── TaskForm.jsx         # Create and edit form with validation
-│   │   └── pages/
-│   │       ├── TodayBoard.jsx       # Main page — today's active tasks
-│   │       ├── HistoryView.jsx      # Date picker + archived tasks list
-│   │       └── SummaryView.jsx      # EOD summary with completion ring chart
-│   ├── nginx.conf                   # Nginx config for SPA routing in Docker
-│   ├── Dockerfile                   # Multi-stage build: Vite → Nginx
-│   ├── .dockerignore
-│   ├── .env                         # Local env vars (git-ignored)
-│   ├── .env.example                 # Template — copy to .env
-│   └── package.json
-├── server/                          # Node.js / Express backend
-│   ├── config/
-│   │   └── db.js                    # PostgreSQL pool + table initialization
-│   ├── controllers/
-│   │   ├── taskController.js        # CRUD + archived tasks handler
-│   │   ├── eodController.js         # Manual EOD trigger handler
-│   │   └── summaryController.js     # Daily summary handler
-│   ├── routes/
-│   │   ├── tasks.js                 # Task CRUD routes
-│   │   ├── eod.js                   # EOD trigger route
-│   │   └── summaries.js             # Summary route
-│   ├── services/
-│   │   └── eodService.js            # EOD logic: archive, summarize, email
-│   ├── jobs/
-│   │   └── scheduler.js             # node-cron job (23:59 daily)
-│   ├── Dockerfile                   # Multi-stage Node.js build
-│   ├── .dockerignore
-│   ├── .env                         # Local env vars (git-ignored)
-│   ├── .env.example                 # Template — copy to .env
-│   ├── index.js                     # Express app bootstrap
-│   └── package.json
-├── docker-compose.yml               # PostgreSQL + Express + React containers
+│   │   ├── api/taskApi.js       # Axios client
+│   │   ├── components/          # Navbar, TaskCard, TaskForm
+│   │   └── pages/               # TodayBoard, HistoryView, SummaryView
+│   └── Dockerfile
+├── server/                      # Express backend
+│   ├── config/db.js             # PostgreSQL pool + tables
+│   ├── controllers/             # taskController, eodController, summaryController
+│   ├── routes/                  # tasks, eod, summaries
+│   ├── services/eodService.js   # EOD logic
+│   ├── jobs/scheduler.js        # Cron job
+│   └── index.js
+├── docker-compose.yml
 └── README.md
 ```
 
@@ -86,131 +39,54 @@ daily-task-manager/
 
 ## Prerequisites
 
-- **Docker** and **Docker Compose** (recommended)
-- _or_ **Node.js** 20+ and **PostgreSQL** 16+ for local development
+- Docker + Docker Compose (recommended) OR Node.js 20+ + PostgreSQL 16+
 
 ---
 
-## Quick Start with Docker
+## Setup
 
-> Requires only Docker — no local Node.js or PostgreSQL needed.
-
-### 1. Clone the repository
+### Docker (Recommended)
 
 ```bash
 git clone <repo-url>
 cd daily-task-manager
-```
-
-### 2. Set up environment variables
-
-```bash
 cp server/.env.example server/.env
 cp client/.env.example client/.env
-```
-
-Edit `server/.env` and fill in your Mailtrap credentials (optional — the app works without them, email just won't be sent).
-
-### 3. Start the containers
-
-```bash
+# Edit server/.env with Mailtrap credentials (optional)
 docker compose up --build -d
+# Containers: db (5433), server (5001), client/Nginx (3000)
 ```
 
-This spins up three containers:
+**Access:**
+- App: http://localhost:3000
+- API: http://localhost:5001/api
 
-| Container            | Description             | Host Port |
-|----------------------|-------------------------|-----------|
-| `taskmanager_db`     | PostgreSQL 16           | `5433`    |
-| `taskmanager_server` | Express API             | `5001`    |
-| `taskmanager_client` | React app (Nginx)       | `3000`    |
-
-Database tables are created automatically when the server starts.
-
-### 4. Open in browser
-
-```
-http://localhost:3000
+**Docker Commands:**
+```bash
+docker compose logs -f              # View logs
+docker compose down                 # Stop containers
+docker compose down -v              # Stop + remove database
+docker compose up --build -d        # Rebuild after changes
 ```
 
-The API is available at `http://localhost:5001/api`.
-
-### 5. Useful Docker commands
+### Local Setup
 
 ```bash
-# View logs
-docker compose logs -f
-
-# Stop all containers
-docker compose down
-
-# Stop and remove database volume (full reset)
-docker compose down -v
-
-# Rebuild after code changes
-docker compose up --build -d
-```
-
----
-
-## Local Setup (without Docker)
-
-### 1. Clone and set up environment
-
-```bash
-git clone <repo-url>
-cd daily-task-manager
-```
-
-### 2. Set up the server
-
-```bash
+# Server
 cd server
 cp .env.example .env
-# Edit .env — set DB credentials, Mailtrap config, etc.
 npm install
-```
-
-### 3. Set up the client
-
-```bash
-cd ../client
-cp .env.example .env
-# Edit .env — set VITE_API_URL (default: http://localhost:5000/api)
-npm install
-```
-
-### 4. Ensure PostgreSQL is running
-
-Create the database:
-
-```bash
 createdb daily_task_manager
-```
-
-Tables are created automatically when the server starts — no manual migration needed.
-
-### 5. Run the application
-
-**Terminal 1** — API server:
-
-```bash
-cd server
 npm run dev
-```
 
-**Terminal 2** — React client:
-
-```bash
+# Client (new terminal)
 cd client
+cp .env.example .env
+npm install
 npm run dev
 ```
 
-### 6. Open in browser
-
-```
-http://localhost:5173
-```
+**Access:** http://localhost:5173
 
 ---
 
@@ -218,62 +94,50 @@ http://localhost:5173
 
 ### Server (`server/.env`)
 
-| Variable        | Description                             | Example                        |
-|-----------------|-----------------------------------------|--------------------------------|
-| `PORT`          | Express server port                     | `5000`                         |
-| `DB_HOST`       | PostgreSQL host                         | `localhost`                    |
-| `DB_PORT`       | PostgreSQL port                         | `5432`                         |
-| `DB_NAME`       | Database name                           | `daily_task_manager`           |
-| `DB_USER`       | Database user                           | `postgres`                     |
-| `DB_PASSWORD`   | Database password                       | `root`                         |
-| `CORS_ORIGIN`   | Allowed origins (comma-separated)       | `http://localhost:5173,http://localhost:3000` |
-| `TZ`            | Timezone for cron and timestamps        | `Asia/Kolkata`                 |
-| `MAILTRAP_HOST` | Mailtrap SMTP host                      | `sandbox.smtp.mailtrap.io`     |
-| `MAILTRAP_PORT` | Mailtrap SMTP port                      | `2525`                         |
-| `MAILTRAP_USER` | Mailtrap SMTP username                  | `your_mailtrap_user`           |
-| `MAILTRAP_PASS` | Mailtrap SMTP password                  | `your_mailtrap_pass`           |
-| `MAILTRAP_FROM` | Sender address in emails                | `noreply@dailytaskmanager.com` |
-| `NOTIFY_EMAIL`  | Recipient for the daily summary email   | `you@example.com`              |
+| Variable        | Description                              |
+|-----------------|-----------------------------------------|
+| `PORT`          | Express port (default: 5000)            |
+| `DB_HOST`       | PostgreSQL host                         |
+| `DB_PORT`       | PostgreSQL port (default: 5432)         |
+| `DB_NAME`       | Database name                           |
+| `DB_USER`       | Database user                           |
+| `DB_PASSWORD`   | Database password                       |
+| `CORS_ORIGIN`   | Allowed origins (comma-separated)       |
+| `TZ`            | Timezone (default: Asia/Kolkata)        |
+| `MAILTRAP_HOST` | Mailtrap SMTP host                      |
+| `MAILTRAP_PORT` | Mailtrap SMTP port (default: 2525)      |
+| `MAILTRAP_USER` | Mailtrap username                       |
+| `MAILTRAP_PASS` | Mailtrap password                       |
+| `MAILTRAP_FROM` | Sender email address                    |
+| `NOTIFY_EMAIL`  | Recipient email for daily summary       |
 
 ### Client (`client/.env`)
 
-| Variable       | Description              | Example                      |
-|----------------|--------------------------|------------------------------|
-| `VITE_API_URL` | Backend API base URL     | `http://localhost:5000/api`  |
+| Variable       | Description                    |
+|----------------|--------------------------------|
+| `VITE_API_URL` | Backend API base URL           |
 
 ---
 
 ## API Endpoints
 
 ### Tasks (`/api/tasks`)
-
-| Method   | Endpoint     | Description                          | Body / Query                              |
-|----------|-------------|--------------------------------------|-------------------------------------------|
-| `GET`    | `/`         | Fetch tasks for a date               | Query: `?date=YYYY-MM-DD` (default: today)|
-| `POST`   | `/`         | Create a new task                    | Body: `{ title, description?, status?, task_date? }` |
-| `PUT`    | `/:id`      | Update a task                        | Body: `{ title?, description?, status? }` |
-| `DELETE` | `/:id`      | Delete a task                        | URL param: `id`                           |
-| `GET`    | `/archived` | Fetch archived tasks for a date      | Query: `?date=YYYY-MM-DD` **(required)**  |
+- `GET /` — Fetch tasks (query: `?date=YYYY-MM-DD`)
+- `POST /` — Create task (body: `{ title, description?, status?, task_date? }`)
+- `PUT /:id` — Update task (body: `{ title?, description?, status? }`)
+- `DELETE /:id` — Delete task
+- `GET /archived` — Fetch archived tasks (query: `?date=YYYY-MM-DD`)
 
 ### EOD (`/api/eod`)
-
-| Method   | Endpoint     | Description                          | Body                                      |
-|----------|-------------|--------------------------------------|-------------------------------------------|
-| `POST`   | `/trigger`  | Manually trigger the EOD process     | Body: `{ date? }` (default: today)        |
+- `POST /trigger` — Trigger EOD process (body: `{ date? }`)
 
 ### Summaries (`/api/summaries`)
-
-| Method   | Endpoint     | Description                          | Params                                    |
-|----------|-------------|--------------------------------------|-------------------------------------------|
-| `GET`    | `/:date`    | Fetch daily summary for a date       | URL param: `YYYY-MM-DD`                   |
+- `GET /:date` — Fetch daily summary (param: `YYYY-MM-DD`)
 
 ### Health
+- `GET /api/health` — Server health check
 
-| Method   | Endpoint       | Description      |
-|----------|---------------|------------------|
-| `GET`    | `/api/health` | Server health check |
-
-**Valid `status` values:** `pending` | `in_progress` | `completed` | `not_completed`
+**Valid statuses:** `pending` | `in_progress` | `completed` | `not_completed`
 
 ---
 
@@ -281,78 +145,77 @@ http://localhost:5173
 
 ### `tasks` — Active daily tasks
 
-| Column        | Type           | Notes                                                        |
-|---------------|----------------|--------------------------------------------------------------|
-| `id`          | `SERIAL`       | Primary key                                                  |
-| `title`       | `VARCHAR(255)` | Not null                                                     |
-| `description` | `TEXT`         | Optional                                                     |
-| `status`      | `VARCHAR(20)`  | Default: `pending`. CHECK: `pending`, `in_progress`, `completed`, `not_completed` |
-| `task_date`   | `DATE`         | Default: `CURRENT_DATE`                                      |
-| `created_at`  | `TIMESTAMP`    | Default: `NOW()`                                             |
-| `updated_at`  | `TIMESTAMP`    | Default: `NOW()`                                             |
+| Column        | Type           |
+|---------------|----------------|
+| `id`          | `SERIAL`       |
+| `title`       | `VARCHAR(255)` |
+| `description` | `TEXT`         |
+| `status`      | `VARCHAR(20)`  |
+| `task_date`   | `DATE`         |
+| `created_at`  | `TIMESTAMP`    |
+| `updated_at`  | `TIMESTAMP`    |
 
-Index: `idx_tasks_date` on `task_date`
+Index: `idx_tasks_date`
 
-### `archived_tasks` — Historical records after EOD
+### `archived_tasks` — Historical records
 
-| Column        | Type           | Notes                                  |
-|---------------|----------------|----------------------------------------|
-| `id`          | `SERIAL`       | Primary key                            |
-| `original_id` | `INTEGER`      | Original task ID before archiving      |
-| `title`       | `VARCHAR(255)` | Not null                               |
-| `description` | `TEXT`         | Optional                               |
-| `status`      | `VARCHAR(20)`  | Final status at time of archiving      |
-| `task_date`   | `DATE`         | Original task date                     |
-| `created_at`  | `TIMESTAMP`    | Original creation time                 |
-| `updated_at`  | `TIMESTAMP`    | Last update time                       |
-| `archived_at` | `TIMESTAMP`    | Default: `NOW()` — when EOD ran        |
+| Column        | Type           |
+|---------------|----------------|
+| `id`          | `SERIAL`       |
+| `original_id` | `INTEGER`      |
+| `title`       | `VARCHAR(255)` |
+| `description` | `TEXT`         |
+| `status`      | `VARCHAR(20)`  |
+| `task_date`   | `DATE`         |
+| `created_at`  | `TIMESTAMP`    |
+| `updated_at`  | `TIMESTAMP`    |
+| `archived_at` | `TIMESTAMP`    |
 
-Index: `idx_archived_date` on `task_date`
+Index: `idx_archived_date`
 
-### `daily_summaries` — Per-day aggregated statistics
+### `daily_summaries` — Daily statistics
 
-| Column                  | Type           | Notes                          |
-|-------------------------|----------------|--------------------------------|
-| `id`                    | `SERIAL`       | Primary key                    |
-| `summary_date`          | `DATE`         | Unique, not null               |
-| `total_tasks`           | `INTEGER`      | Not null                       |
-| `completed_tasks`       | `INTEGER`      | Not null                       |
-| `pending_tasks`         | `INTEGER`      | Not null                       |
-| `completion_percentage` | `NUMERIC(5,2)` | Not null                       |
-| `eod_executed_at`       | `TIMESTAMP`    | Default: `NOW()`               |
+| Column                  | Type          |
+|-------------------------|---------------|
+| `id`                    | `SERIAL`      |
+| `summary_date`          | `DATE`        |
+| `total_tasks`           | `INTEGER`     |
+| `completed_tasks`       | `INTEGER`     |
+| `pending_tasks`         | `INTEGER`     |
+| `completion_percentage` | `NUMERIC(5,2)`|
+| `eod_executed_at`       | `TIMESTAMP`   |
 
-Index: `idx_summaries_date` on `summary_date`
+Index: `idx_summaries_date`
 
 ---
 
 ## EOD Job
 
-The End-of-Day job runs via `node-cron` at **23:59 every night** (Asia/Kolkata timezone). The core steps run inside a single PostgreSQL transaction for atomicity.
+Runs via `node-cron` at **23:59 (Asia/Kolkata)** using a PostgreSQL transaction:
 
-1. **Fetch tasks** — gets all tasks for the target date
-2. **Count totals** — calculates completed, pending, and completion percentage
-3. **Update stale tasks** — any task still `in_progress` is set to `not_completed`
-4. **Archive tasks** — copies all tasks into `archived_tasks` with metadata preserved
-5. **Delete from active table** — removes archived tasks from `tasks`
-6. **Compute cumulative stats** — aggregates across all archived records for the date
-7. **Upsert summary** — writes/updates `daily_summaries` row (idempotent via `ON CONFLICT`)
-8. **Send email** — dispatches an HTML summary email via Mailtrap. Email failure is caught gracefully and does not roll back the transaction
-9. **Commit** — all database changes from steps 3-7 commit atomically
+1. Fetch tasks for the date
+2. Calculate totals: completed, pending, completion %
+3. Update in-progress tasks to not-completed
+4. Archive all tasks to `archived_tasks`
+5. Delete from `tasks` table
+6. Compute cumulative stats
+7. Upsert `daily_summaries` row (idempotent)
+8. Send HTML email summary via Mailtrap (failure doesn't rollback)
+9. Commit transaction
 
----
+All steps 3-7 are atomic.
 
-## Testing the EOD Job
+### Test EOD
 
-With the app running, click the **EOD** button in the Navbar, or use cURL:
+Click **EOD** button in Navbar or run:
 
 ```bash
 curl -X POST http://localhost:5001/api/eod/trigger
 ```
 
-**Verify the results:**
-
-1. Check server logs for the `[EOD]` log sequence
-2. Open **Mailtrap inbox** — an HTML daily summary email should appear
-3. Go to **History** page, select today's date — archived tasks should appear
-4. Go to **Summary** page — completion stats and ring chart should display
-5. Go to **Today Board** — it should be empty (tasks were archived)
+Verify:
+1. Check server logs for `[EOD]` sequence
+2. Check Mailtrap inbox for email
+3. Visit History page → today's date → archived tasks visible
+4. Visit Summary page → completion stats displayed
+5. Today Board → empty (tasks archived)
