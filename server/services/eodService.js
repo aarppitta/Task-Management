@@ -141,70 +141,100 @@ async function sendEmailSummary({
   completionPercentage,
   tasks,
 }) {
-  const transporter = nodemailer.createTransport({
-    host: process.env.MAILTRAP_HOST,
-    port: parseInt(process.env.MAILTRAP_PORT, 10),
-    secure: false,
-    auth: {
-      user: process.env.MAILTRAP_USER,
-      pass: process.env.MAILTRAP_PASS,
-    },
-  });
+  // Validate environment variables
+  const requiredVars = ['MAILTRAP_HOST', 'MAILTRAP_PORT', 'MAILTRAP_USER', 'MAILTRAP_PASS', 'NOTIFY_EMAIL'];
+  const missing = requiredVars.filter(v => !process.env[v]);
 
-  const taskRows = tasks
-    .map(
-      (t) =>
-        `<tr>
-          <td style="padding:8px;border:1px solid #ddd">${t.title}</td>
-          <td style="padding:8px;border:1px solid #ddd">${t.description || '-'}</td>
-          <td style="padding:8px;border:1px solid #ddd;text-transform:capitalize">${t.status.replace('_', ' ')}</td>
-        </tr>`
-    )
-    .join('');
+  if (missing.length > 0) {
+    console.error(`[Email] Missing environment variables: ${missing.join(', ')}`);
+    throw new Error(`Missing email config: ${missing.join(', ')}`);
+  }
 
-  const html = `
-    <h2>Daily Task Summary — ${targetDate}</h2>
-    <table style="border-collapse:collapse;width:100%;margin-bottom:20px">
-      <tr>
-        <td style="padding:12px;background:#f0f4f8;font-weight:bold">Total Tasks</td>
-        <td style="padding:12px">${totalTasks}</td>
-      </tr>
-      <tr>
-        <td style="padding:12px;background:#f0f4f8;font-weight:bold">Completed</td>
-        <td style="padding:12px;color:#16a34a">${completedTasks}</td>
-      </tr>
-      <tr>
-        <td style="padding:12px;background:#f0f4f8;font-weight:bold">Pending / Incomplete</td>
-        <td style="padding:12px;color:#dc2626">${pendingTasks}</td>
-      </tr>
-      <tr>
-        <td style="padding:12px;background:#f0f4f8;font-weight:bold">Completion Rate</td>
-        <td style="padding:12px;color:#2563eb">${completionPercentage}%</td>
-      </tr>
-    </table>
-    ${
-      tasks.length > 0
-        ? `<h3>Task Details</h3>
-           <table style="border-collapse:collapse;width:100%">
-             <thead>
-               <tr>
-                 <th style="padding:8px;border:1px solid #ddd;background:#f0f4f8">Title</th>
-                 <th style="padding:8px;border:1px solid #ddd;background:#f0f4f8">Description</th>
-                 <th style="padding:8px;border:1px solid #ddd;background:#f0f4f8">Status</th>
-               </tr>
-             </thead>
-             <tbody>${taskRows}</tbody>
-           </table>`
-        : '<p>No tasks were found for this date.</p>'
-    }
-  `;
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.MAILTRAP_HOST,
+      port: parseInt(process.env.MAILTRAP_PORT, 10),
+      secure: false,
+      auth: {
+        user: process.env.MAILTRAP_USER,
+        pass: process.env.MAILTRAP_PASS,
+      },
+    });
 
-  await transporter.sendMail({
-    from: process.env.MAILTRAP_FROM || `"TaskManager" <${process.env.MAILTRAP_USER}>`,
-    to: process.env.NOTIFY_EMAIL,
-    subject: `Daily Summary: ${targetDate} — ${completionPercentage}% completed`,
-    html,
-  });
+    console.log('[Email] Transporter created, verifying connection...');
 
-  console.log(`[EOD] Email sent to ${process.env.NOTIFY_EMAIL}`);
+    // Verify transporter connection
+    await transporter.verify();
+    console.log('[Email] Transporter verified successfully');
+
+    const taskRows = tasks
+      .map(
+        (t) =>
+          `<tr>
+            <td style="padding:8px;border:1px solid #ddd">${t.title}</td>
+            <td style="padding:8px;border:1px solid #ddd">${t.description || '-'}</td>
+            <td style="padding:8px;border:1px solid #ddd;text-transform:capitalize">${t.status.replace('_', ' ')}</td>
+          </tr>`
+      )
+      .join('');
+
+    const html = `
+      <h2>Daily Task Summary — ${targetDate}</h2>
+      <table style="border-collapse:collapse;width:100%;margin-bottom:20px">
+        <tr>
+          <td style="padding:12px;background:#f0f4f8;font-weight:bold">Total Tasks</td>
+          <td style="padding:12px">${totalTasks}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px;background:#f0f4f8;font-weight:bold">Completed</td>
+          <td style="padding:12px;color:#16a34a">${completedTasks}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px;background:#f0f4f8;font-weight:bold">Pending / Incomplete</td>
+          <td style="padding:12px;color:#dc2626">${pendingTasks}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px;background:#f0f4f8;font-weight:bold">Completion Rate</td>
+          <td style="padding:12px;color:#2563eb">${completionPercentage}%</td>
+        </tr>
+      </table>
+      ${
+        tasks.length > 0
+          ? `<h3>Task Details</h3>
+             <table style="border-collapse:collapse;width:100%">
+               <thead>
+                 <tr>
+                   <th style="padding:8px;border:1px solid #ddd;background:#f0f4f8">Title</th>
+                   <th style="padding:8px;border:1px solid #ddd;background:#f0f4f8">Description</th>
+                   <th style="padding:8px;border:1px solid #ddd;background:#f0f4f8">Status</th>
+                 </tr>
+               </thead>
+               <tbody>${taskRows}</tbody>
+             </table>`
+          : '<p>No tasks were found for this date.</p>'
+      }
+    `;
+
+    const mailOptions = {
+      from: process.env.MAILTRAP_FROM || `"TaskManager" <${process.env.MAILTRAP_USER}>`,
+      to: process.env.NOTIFY_EMAIL,
+      subject: `Daily Summary: ${targetDate} — ${completionPercentage}% completed`,
+      html,
+    };
+
+    console.log(`[Email] Sending email to: ${process.env.NOTIFY_EMAIL}`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`[Email] Email sent successfully. Message ID: ${info.messageId}`);
+    return info;
+  } catch (err) {
+    console.error('[Email] Failed to send email:', {
+      error: err.message,
+      code: err.code,
+      command: err.command,
+      host: process.env.MAILTRAP_HOST,
+      port: process.env.MAILTRAP_PORT,
+      user: process.env.MAILTRAP_USER?.substring(0, 3) + '***',
+    });
+    throw err;
+  }
 }
